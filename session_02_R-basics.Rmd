@@ -215,9 +215,80 @@ Be sure to keep a careful eye on the brackets - they need to match up, so that e
 Using rainbow brackets (`Code >> Rainbow Parentheses`) is a great way of helping keep your brackets paired.
 
 ### The pipe
-` %>%` - also called [the pipe](https://r4ds.had.co.nz/pipes.html) - is a way of chaining commands together. As we've seen above, nesting several functions together with brackets can get quite messy. We can use the pipe to simplify our code to do many operations in sequence on some set of data. One important fact to know: the pipe doesn't work in all R code. To explain why, we need to digress a bit into how R works.
+
+As we've seen above, nesting several functions together with brackets can get a bit messy. The base R `|>` pipe  allows users to chain together commands in a clean way.
+
+Introduced in R version 4.1.0, the `|>` pipe is built into base R, meaning you don't need to install any extra packages to use it.
+
+At its core, the pipe takes the results on the left-hand side of the pipe, and passes it as the first argument to the function on the right-hand side of the pipe.
+
+In the example below, we are finding the unique numbers within a vector and sorting them from lowest to highest order:
+
+```{r eval=F}
+unique_sorted <- c(3, 1, 2, 3, 1, 4) |> unique() |> sort()
+
+unique_sorted
+```
+
+In the above example, the vector of numbers are passed to `unique()` which finds the unique values within the vector.
+
+The unique values are then passed to `sort()`, resulting in the unique values being sorted. 
+
+This unique sorted vector is then assigned to `unique_sorted`.
+
+
+#### Anonymous Functions
+
+While the above is straightforward, what do we do when you want to carry out a process (such as multiplying a result by a number) without having a function to pass it to?
+
+The answer is that you can create an anonymous function to receive the results and carry out the method you desire.
+
+For instance, let us find the square root of 16, then multiply the result by 2.
+
+```{r eval=F}
+result <- 16 |> sqrt() |> * 2 
+```
+
+While you might think the above code should work, it would actually display an error because `* 2` is not a valid function/expression, as it is unable to receive the result from the `sqrt()` function.
+
+Instead, we will create an anonymous function in its place, will be able to receive the result from `sqrt()`:
+
+```{r eval=F}
+result <- 16 |> sqrt() |>  (\(x) x * 2)()
+```
+
+In the above corrected code:
+
+`\(x)` defines an anonymous function that takes one argument `x`.
+
+`x * 2` is the body of the function which states what the function does.
+
+The `|>` on the left hand side therefore passes through the result of `sqrt()` into the anonymous function, which is then multiplied by 2.
+
+The result is assigned to `result`.
+
+Another way to achieve the above would have been to obtain the result of `sqrt()` and multiplied that by 2, outside of the `|>` pipe:
+
+```{r eval=F}
+result <- 16 |> sqrt()
+
+doubled_result = result * 2
+```
+
+This method may give the advantage of being more easily understood, especially if you are new to R. However, anonymous functions have the benefit of being concise, and allow users to create more complex chains of operations.
+
+Next, we will look at the `%>%` magrittr pipe, which allows even more flexible data manipulation, especially when working with the tidyverse functions.
+
+
+### Magrittr Pipe
+
+`%>%` - also called [the magrittr pipe](https://r4ds.had.co.nz/pipes.html) - is similar to the native pipe, in that it allows users to chain commands together.
+
+One important fact to know: the pipe doesn't work in all R code. To explain why, we need to digress a bit into how R works.
+
 
 #### Packages
+
 R uses packages, which are plug-ins that offer useful functions. We need to add these packages to R to help us do some of our tasks. We've actually added them already in the first few lines of this report. Let's have a look at this code, which here includes some explanatory comments:
 
 ```{verbatim}
@@ -233,8 +304,11 @@ This chunk of code loads several packages here to help us do some useful work wi
 
 There's a lot that might be said about packages here, but this is probably better skipped over for now. If you're very interested, the [NHS-R statement on tools](https://nhs-r-community.github.io/statements-on-tools/statement-on-using-tools.html) has some useful background information about packages and their role in making R work.
 
+
 #### Back to the pipe
-**The pipe only works in [tidyverse](https://www.tidyverse.org/) functions**. Let's demonstrate the pipe by showing it at work in some code that will load data into R, and tidy it up for us:
+
+**The magrittr pipe only works in [tidyverse](https://www.tidyverse.org/) functions**. Let's demonstrate the pipe by showing it at work in some code that will load data into R, and tidy it up for us:
+
 
 ```{r eval=F}
 data <- read_csv("data/data.csv") %>%
@@ -242,9 +316,43 @@ data <- read_csv("data/data.csv") %>%
   mutate(total = count1+count2+count3)
 ```
 
-We'll explain the functions in this code in the next section, but for now, let's concentrate on the pipe. The pipe (`%>%`) allows us to stick lines of code together. In the example above, we do three different operations - reading some data, then fixing the dates in the data, then making a new summary column. In traditional R, we would need to either nest those functions together in a long string of nested brackets, or save our data each time using `<-`. However, the pipe lets us do each of the three operations in series. It has some other important properties too that we'll cover later on, but for now we can happily think of the pipe as a way of joining sections of code.
 
-Note that in very new R code, you might also see an alternative way of writing the pipe as `|>`. We take quite a conservative approach to innovations in code in this training so that we don't exclude trainees who are working from older systems, and so we'll stick with the traditional formulation of the pipe for now.
+
+The pipe (`%>%`) much like the base R pipe, allows us to stick lines of code together. 
+
+In the example above, we do three different operations - reading some data, then fixing the dates in the data, then making a new summary column. 
+
+It is important to note that the `mutate()` function, which creates a new column with the given data, is a function present within the tidyverse. As such, if you tried to use `mutate()` with base `|>` pipe without loading the tidyverse, there would be an error.
+
+
+#### Anonymous Function
+
+Much like with the `|>` pipe, the `%>%` pipe requires the operations to be in the form of functions/expressions.
+
+Let us take the previous example of finding the square root of 16, then multiplying that by 2.
+
+In the `%>%` pipe, we can just use `{}` with `.` to create a quick in-line function:
+
+```{r eval=F}
+result <- 16 %>%
+  sqrt() %>%
+  { . * 2 }
+```
+
+This is an anonymous function which the `.` takes the place of the value being passed through into the function which multiplies the value by 2.
+
+The `.` can also be used to simply pass the value through:
+
+```{r eval=F}
+"hello.txt" %>% paste("File path is:", .)
+
+```
+
+The above code would be the same as `paste("File path is:", "hello.txt")`
+
+As you can see, there is a greater degree of flexibility when compared to `|>`.
+
+
 
 ## Getting data
 
