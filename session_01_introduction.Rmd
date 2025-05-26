@@ -46,9 +46,9 @@ Some ground rules for this training session:
 
 ### Exercise
 
-Let's make an html page with the instructions for this session:
+Let's make an webpage with the instructions for the rest of this session:
 
-1. Select the *Knit to html* option from the menu at the top of the code pane. You can select any of the output formats, although I'd suggest sticking with .html (webpage) while working through the training.
+1. Select the *Knit to html* option from the menu at the top of the code pane:
 
 ```{r, echo=F, out.width = "400px", fig.align = 'center'}
 include_graphics("img/knitr_options.png")
@@ -56,7 +56,7 @@ include_graphics("img/knitr_options.png")
 
 **or**
 
-- press `ctrl+shift+k` while your cursor is in the code pane to knit to the last used format
+- press `Ctrl+Shift+k` while your cursor is in the code pane to knit to the last used format
 
 2. You'll get a warning about required packages. Just agree to this, as you'll need the packages to knit your document properly.
 
@@ -109,7 +109,7 @@ In this training, we won't talk too much about the YAML as Posit mainly takes ca
 
 ```{r}
 # this is a chunk of R code that loads some data, and converts the date format
-data <- read_csv("data/data.csv") %>% 
+data <- read_csv("data/data.csv") |> 
   mutate(date=dmy(date))
 ```
 
@@ -122,21 +122,20 @@ We'll then use that data to produce dynamic text, that updates as the data chang
 We'll also learn how to manipulate and display data, including producing summaries and other measures of use across health, care, and housing:
 
 ```{r}
-data %>%
-  mutate(total = count1 + count2 + count3) %>%
-  head() %>%
+data |>
+  mutate(total = count1 + count2 + count3) |>
+  head() |>
   kable(caption="Some vital data")
 ```
 
 We'll draw graphs with that data and show how they can fit into your report:
 
 ```{r fig.height=1.5, fig.width=7, fig.align = 'center'}
-data %>%
+data |>
   ggplot() +
   geom_line(aes(x=date, y=count1)) +
   xlab("Date") + ylab("Count 1") +
-  ggtitle("Some vital data over time") +
-  theme(axis.text = element_text(size = 6), axis.title = element_text(size = 7))
+  ggtitle("Some vital data over time")
 ```
 
 Finally, we'll end with some tips on possible next steps for you.
@@ -144,15 +143,14 @@ Finally, we'll end with some tips on possible next steps for you.
 ### Exercise
 Let's take a chunk of code that draws a graph. Can you find where the title of the graph is set? Can you tweak the title to improve it?
 
-Once you've made your changes in the code below, try re-knitting your document using the *Knit to html* option from the menu at the top of the code pane (or *`ctrl+shift+k`*).
+Once you've made your changes in the code below, try re-knitting your document using the `Knit to html` option from the menu at the top of the code pane (or `Ctrl+Shift+k`).
 
 ```{r fig.height=1.5, fig.width=7, fig.align = 'center'}
-data %>%
+data |>
   ggplot() +
   geom_line(aes(x=date, y=count2)) +
   xlab("Date") + ylab("Count 1") +
-  ggtitle("More vital data over time") +
-  theme(axis.text = element_text(size = 6), axis.title = element_text(size = 7))
+  ggtitle("More vital data over time")
 ```
 
 
@@ -315,7 +313,7 @@ Apart from the backticks and the R code itself, there are also some options in {
 + `message=FALSE`: whether to show information messages about how your code is running
 + we've also explored some options relating to image size and alignment in the graph section, such as  `out.width = "400px"`, and `fig.align = 'center'`
 
-Setting all the chunk options can become very involved. The [Rmarkdown Cookbook](https://bookdown.org/yihui/rmarkdown/r-code.html) is a great helper and reference for that kind of work. In general, it's best to keep them as simple as possible. You might just begin with default chunks. A useful shortcut to insert a new R chunk is `ctrl + alt + i`, or you can use the button at the top right of the code pane `r include_graphics("img/chunk.png")`, and only add the options as you need them.
+Setting all the chunk options can become very involved. The [Rmarkdown Cookbook](https://bookdown.org/yihui/rmarkdown/r-code.html) is a great helper and reference for that kind of work. In general, it's best to keep them as simple as possible. You might just begin with default chunks. A useful shortcut to insert a new R chunk is `Ctrl + Alt + i`, or you can use the button at the top right of the code pane `r include_graphics("img/chunk.png")`, and only add the options as you need them.
 
 There are also some useful hints in the [knitr documentation](https://yihui.org/knitr/options/). But for now, I'll suggest that you skip trying to figure it all out in favour of spending our time on some of the more interesting areas of this training. 
 
@@ -324,8 +322,8 @@ There are also some useful hints in the [knitr documentation](https://yihui.org/
 
 2. Once you've created your new chunk, copy-and-paste the following code into it:
 ```{verbatim}
-data %>% 
-  mutate(total=count1+count2+count3) %>%
+data |> 
+  mutate(total=count1+count2+count3) |>
   ggplot() +
   geom_col(aes(x=date, y=total, fill=count1))
 

@@ -1,9 +1,5 @@
 ![](img/header.png) Introductory R and Rmarkdown
 ================
-Brendan Clarke
-2023-04-17
-
-# 
 
 ## Introduction
 
@@ -178,7 +174,7 @@ Cloud](https://rstudio.cloud), please follow the step-by-step
 instructions below. If you’ve worked with Posit Cloud before, you can
 just sign-in to your account at [Posit Cloud](https://rstudio.cloud/),
 create a new project from the [GitHub Repository at
-https://github.com/bclarke-nes/Introductory-R-and-Rmarkdown](https://github.com/bclarke-nes/Introductory-R-and-Rmarkdown),
+https://github.com/NES-DEW/Introductory-R-and-Rmarkdown/](https://github.com/NES-DEW/Introductory-R-and-Rmarkdown/),
 and then open the `demo.Rmd` file from the file pane.
 
 #### Step-by-step instructions
@@ -200,7 +196,7 @@ credentials from your NHS computer.
     `New Project >> New Project from a Git repository`.
 
 When prompted, enter the URL
-`https://github.com/bclarke-nes/Introductory-R-and-Rmarkdown`
+`https://github.com/NES-DEW/Introductory-R-and-Rmarkdown/`
 
 If you’ve never used GitHub before, you can think of it as a website
 where programmers can store code. All we’re doing in this step is
