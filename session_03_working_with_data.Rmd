@@ -34,7 +34,7 @@ p_load(tidyr,readr,DiagrammeR,ggplot2,dplyr,lubridate,NHSRplotthedots,readxl,str
 
 # avoiding tidyverse as loading in RStudio Cloud potentially runs out of memory 
 
-data_dates <- read_csv("data/data.csv") %>%
+tidy_data <- read_csv("data/data.csv") |>
   mutate(date = dmy(date))
 ```
 
@@ -53,18 +53,16 @@ A reminder of the ground rules for this session:
 We'll start with the data that we loaded from file and tidied during the last session:
 
 ```{r}
-data_dates <- read_csv("data/data.csv") %>%
+tidy_data <- read_csv("data/data.csv") |>
   mutate(date = dmy(date))
 ```
 
-We'll show how we can add elements drawn from that data into our Rmarkdown (so the total of the count1 column is `r sum(data_dates$count1)`). And we'll manipulate and display that data in simple summary tables:
+We'll show how we can add elements drawn from that data into our Rmarkdown (so the total of the count1 column is `r sum(tidy_data$count1)`), as well as showing how to display tables in Rmarkdown:
 
 ```{r}
-data_dates %>%
-  mutate(Day = wday(date, label=T)) %>%
-  group_by(Day) %>%
-  summarise(`Total of count 1` = sum(count1)) %>%
-  kable()
+tidy_data |>
+  filter(count3 > 130) |> 
+  kable(caption = "Neat data!")
 ```
 
 ## Data processing
@@ -76,17 +74,28 @@ We'll use several other `dplyr` commands in this section, but the most important
 + `select()` to select columns
 + `filter()` to select rows
 + `arrange()` to sort rows
++ `pull()` to extract values from tibbles
 
 `dplyr` is probably the single most important R package for most analysts. You might usefully look at the manual page using `??dplyr` - double question-marks opens package help pages - although it's pretty dense. [The `dplyr` cheat-sheet put together by RStudio](https://nyu-cdsc.github.io/learningr/assets/data-transformation.pdf) is much more beginner-friendly.
 
-Let's start with our old friend `data_dates`. So far, apart from some tidying up, we haven't tried to change this data. Let's change that now, starting with something straightforward: adding columns together using `mutate()`:
+### `mutate()`
+
+Let's start with our old friend `tidy_data`. So far, apart from some tidying up, we haven't tried to change this data. Let's change that now, starting with something straightforward: adding columns together using `mutate()`:
 
 ```{r processing 1, echo=FALSE, echo=TRUE, message=FALSE, warning=FALSE}
-data_total <- data_dates %>%
+data_total <- tidy_data |>
   mutate(total = count1 + count2 + count3) 
 ```
 
-We've already met all the parts of this command before. We use the pipe `%>%` to pass the `data_dates` tibble to `mutate`. `mutate` creates a new column (`total`) by adding together the three `count` columns, and we then assign to a new tibble named `data_total`. 
+We've already met all the parts of this command before. We use the pipe `|>` to pass the `tidy_data` tibble to `mutate`. `mutate` creates a new column (`total`) by adding together the three `count` columns, and we then assign to a new tibble named `data_total`. 
+
+We could do another mutate to change that data again - for example, to give us a rate for count1:
+
+```{r processing 2, echo=FALSE, echo=TRUE, message=FALSE, warning=FALSE}
+data_total |>
+  mutate(count1_rate = count1/total) |>
+  head() # to just give us the first few rows
+```
 
 #### Exercise
 Can you add `count2` and `count3` together to make a new column called `count4`
@@ -96,22 +105,27 @@ Can you add `count2` and `count3` together to make a new column called `count4`
 ```
 
 
-### To calculate the count 1 rate (so what percentage of the total it is for that day):
+### `select()`
 
-```{r processing 2, echo=FALSE, echo=TRUE, message=FALSE, warning=FALSE}
-data_total %>%
-  mutate(count1_rate = count1/total) %>%
-  head() # to just give us the first few rows
-```
+The `select` function to select columns. For example, we could look at just the count1 column with:
 
-### To remove the original count1 column:
 ```{r}
-data_total %>% 
-  select(!count1) %>%
+data_total |> 
+  select(count1) |>
   head()
 ```
 
-This uses the `select` function to select columns. Here, the `!` means (roughly) "not" or "except". So `select(!count)` command means "select all columns except for count1. 
+Or we could remove count 1 using:
+
+```{r}
+data_total |> 
+  select(!count1) |>
+  head()
+```
+
+
+Here, the `!` means (roughly) "not" or "except". So `select(!count)` command means "select all columns except for count1. 
+
 
 #### Exercise
 How about removing the count 3 column?
@@ -120,14 +134,17 @@ How about removing the count 3 column?
 
 ```
 
-### To keep only the rows of our table where the total is 200 or more:
+### `filter()`
+
+Filter picks rows. For instance, to keep only the rows of our table where the total is 200 or more, we could write:
+
 ```{r}
-data_total %>% 
-  filter(total >= 200) %>%
+data_total |> 
+  filter(total >= 200) |>
   head() 
 ```
 
-Here, we use `dplyr`'s `filter` to pick out all the values of total that are greater than or equal to 200 (`>= 200`). We can filter in other ways too - `==` to equal some value, `>` or `<` for greater/less than, or `%in%` for partial matching of your value.
+We can filter in other ways too - `==` to equal some value, `>` or `<` for greater/less than.
 
 
 #### Exercise
@@ -138,14 +155,24 @@ How about removing all rows where `total` is over 300?
 
 ```
 
-### To sort our table by the value of count2:
+### `arrange()`
+
+We often want to sort our data. Enter `arrange()`:
+
 ```{r}
-data_total %>% 
-  arrange(count2) %>%
+data_total |> 
+  arrange(count2) |>
   head() 
 ```
 
-`arrange` re-sorts the rows of our tibble based on the values found in the count2 column.
+This sorts our table by the value of count2. By default that's ascending from smallest values, so if you want to reverse the order, the usual trick is to sort by the `-`ive value of the column:
+
+```{r}
+data_total |> 
+  arrange(-count2) |>
+  head() 
+```
+
 
 #### Exercise
 Now please rank your data based on the total.
@@ -153,118 +180,99 @@ Now please rank your data based on the total.
 # Add your code here
 ```
 
-### To add a `rank_count2` column, based on the value of count2, and then re-sorting by reverse date order:
+### `pull()`
+
+If you've got some values, and want to turn them back into a vector (like you built during the last session using `c()`) you can use `pull()`:
+
+```{r}
+data_total |>
+  filter(total == max(total)) |> # finding the biggest value of total
+  pull(total)
+```
+
+While we've so far been demonstrating theses functions in isolation, the joy and power of them largely comes in combination. For example, say you want to add a `rank_count2` column, based on the value of count2, and then re-sort your data reverse date order. That's just a case of piping together a few lines:
+
 ```{r}
 
 # we'll save this one for future reference
-data_total_rank <- data_total %>% 
-  arrange(count2) %>%
-  mutate(rank_count2 = as.integer(rank(count2))) %>% 
+data_total_rank <- data_total |> 
+  arrange(count2) |>
+  mutate(rank_count2 = as.integer(rank(count2))) |> 
   arrange(desc(date))
 
-data_total_rank %>%
+data_total_rank |>
   head() 
 ```
 
 This one is a little bit more complicated. We start by arranging `data_total` by count2 (as the previous chunk). Next, we add a column called `rank_count2` using `mutate()`. This new column contains a number corresponding to the rank of the row. So the value of `rank_count2` for the 7th row would be 7. We make this number using `rank()`, and then convert it to an integer using `as.integer()` to make sure that this rank displays nicely as `7`, rather than the `7.0` decimal that `rank()` produces. We then, using the pipe, re-arrange the tibble using `arrange()`. Note the `desc()` which reverses the usual ascending order of `arrange()`.
 
-### To make the `count1_rate` column rounded percentages, and rename this column to `count1_percentage`:
+Or we could make the `count1_rate` column rounded percentages, and rename this column to `count1_percentage`:
 ```{r}
-data_total_rank %>% 
-  mutate(count1_rate = round((100 * count1/total), 1)) %>% 
-  rename(count1_percentage=count1_rate) %>%
+data_total_rank |> 
+  mutate(count1_rate = round((100 * count1/total), 1)) |> 
+  rename(count1_percentage=count1_rate) |>
   head() 
 ```
 
 We calculate the `count1_rate` values again, then use `round()` to round it to one decimal place, then write those new rounded values back into a `count1_rate` column. Finally, we use `rename()` to rename the column to `count1_percentage`.
 
-Before we move on, it's also worth showing a feature of the `%>%` pipe, which is that it allows us to string together lots of operations in one. This is very useful if we have a lot of processing to do on our data, because it keeps our code nice and concise. It's probably best to avoid building great long chains while you're first writing the code - I end up writing lots of single commands (like in the examples above), and then stringing them all together once I'm sure everything works as expected:
+Before we move on, it's also worth showing a feature of the `|>` pipe, which is that it allows us to string together lots of operations in one. This is very useful if we have a lot of processing to do on our data, because it keeps our code nice and concise. It's probably best to avoid building great long chains while you're first writing the code - I end up writing lots of single commands (like in the examples above), and then stringing them all together once I'm sure everything works as expected:
 
 ```{r}
 
-data_total %>% 
-  mutate(count4 = count2 + count3) %>%
-  filter(total < 300) %>% 
-  select(!count3) %>% 
-  arrange(total) %>%
-  mutate(rank = as.integer(rank(total))) %>%
+data_total |> 
+  mutate(count4 = count2 + count3) |>
+  filter(total < 300) |> 
+  select(!count3) |> 
+  arrange(total) |>
+  mutate(rank = as.integer(rank(total))) |>
   head() 
 
 ```
 
 If everything has worked properly, this single code block should have replicated all of the individual processing steps that we have been working through above.
 
-We can also summarise tables of data using `summarise()`:
-
-```{r}
-data_total %>%
-  summarise(start_date = min(date), end_date = max(date), total = sum(total))
-```
-
-Importantly, `summarise()` makes a new tibble based on the expressions we include within it. This example does three things inside `summarise()`:
-
-+ finds the start date using `min(date)`
-+ finds the end date using `max(date)`
-+ then sums the total column using `sum(total)`
-
-Note that we can call the new columns anything we like. So we could do the same summarising with different column names:
-
-```{r}
-data_total %>%
-  summarise(beginnings = min(date), endings = max(date), grand_total = sum(total))
-```
-
-And we can do many summaries together:
-
-```{r}
-data_total %>%
-  summarise(across(where(is.numeric), ~ sum(.)))
-```
-
-- `across(where(is.numeric)` tells R that we want to use all the columns that contain numbers
-- `~ sum(.)` tells summarise to use the following formula for each column: pass all the values (represented by `.`) into `sum()`
-
 ## Updating text
 
-**We can make our RMarkdown text change using R**. Let's start with a group of examples that show how we might report from our `data_dates` tibble from earlier:
+**We can make our RMarkdown text change using R**. Let's start with a group of examples that show how we might report from our `tidy_data` tibble from earlier:
 
 ---
 
 <!-- Note that we can write comments in our RMarkdown file which won't be displayed in the output. This is very helpful to remind yourself - or tell others - exactly what's going on in your code.-->
 
-### Text showing data from `r month(min(data_dates$date), label = T, abbr=F)` - `r month(max(data_dates$date), label = T, abbr=F)` `r year(min(data_dates$date))`
+### Text showing data from `r month(min(tidy_data$date), label = T, abbr=F)` - `r month(max(tidy_data$date), label = T, abbr=F)` `r year(min(tidy_data$date))`
 
-+ we have data from `r nrow(data_dates)` days
-+ we have a total of `r sum(data_dates$count1)` count1s
-+ the biggest value in count3 is `r max(data_dates$count3)`. 
-+ on the last day for which we have data, the count2 was `r data_dates %>% filter(date == max(date)) %>% select(count2) %>% as.numeric`
-+ the average of count3 was `r round(mean(data_dates$count3), 1)`
++ we have data from `r nrow(tidy_data)` days
++ we have a total of `r sum(tidy_data$count1)` count1s
++ the biggest value in count3 is `r max(tidy_data$count3)`. 
++ on the last day for which we have data, the count2 was `r tidy_data |> filter(date == max(date)) |> pull(count2)`
++ the average of count3 was `r round(mean(tidy_data$count3), 1)`
 
 ---
 
-That might look a bit unimpressive, given all the work that we've done to get here. But now let's see what happens when we run exactly the same commands but change the data. Behind the scenes, there are a couple of R chunks here that change the contents of `data_dates`. We don't need to show these in this report - but do feel free to look at the code pane to see how this works:
+That might look a bit unimpressive, given all the work that we've done to get here. But now let's see what happens when we run exactly the same commands but change the data. Behind the scenes, there are a couple of R chunks here that change the contents of `tidy_data`. We don't need to show these in this report - but do feel free to look at the code pane to see how this works:
 
 ```{r update 1, echo=FALSE, eval=TRUE,warning = FALSE, message=FALSE}
 # backup the demo_dates tibble into demo_dates_old, load new data into the demo_dates tibble, and make sure the dates are correct
-data_dates_old <- data_dates
-data_dates <- read_csv("data/data4.csv") %>% mutate(date=dmy(date))
+tidy_data_old <- tidy_data
+tidy_data <- read_csv("data/data4.csv") |> mutate(date=dmy(date))
 
 ```
 
 ---
 
-### Text showing data from `r month(min(data_dates$date), label = T, abbr=F)` - `r month(max(data_dates$date), label = T, abbr=F)` `r year(min(data_dates$date))`
+### Text showing data from `r month(min(tidy_data$date), label = T, abbr=F)` - `r month(max(tidy_data$date), label = T, abbr=F)` `r year(min(tidy_data$date))`
 
-+ we have data from `r nrow(data_dates)` days
-+ we have a total of `r sum(data_dates$count1)` count1s
-+ the biggest value in count3 is `r max(data_dates$count3)`. 
-+ on the last day for which we have data, the count2 was `r data_dates %>% filter(date == max(date)) %>% select(count2) %>% as.numeric`
-+ the average of count3 was `r round(mean(data_dates$count3), 1)`
++ we have data from `r nrow(tidy_data)` days
++ we have a total of `r sum(tidy_data$count1)` count1s
++ the biggest value in count3 is `r max(tidy_data$count3)`. 
++ on the last day for which we have data, the count2 was `r tidy_data |> filter(date == max(date)) |> pull(count2)`
++ the average of count3 was `r round(mean(tidy_data$count3), 1)`
 
 ```{r update 2, echo=FALSE, eval=TRUE,warning = FALSE, message=FALSE}
 # restoring the original demo_dates tibble, and removing demo_dates_old
-data_dates <- data_dates_old
-rm(data_dates_old)
+tidy_data <- tidy_data_old
+rm(tidy_data_old)
 ```
 
 ---
@@ -281,28 +289,28 @@ Let's go through the example above to see how the commands work:
 
 <!-- trying to get RMarkdown to actually display backticks without interpreting them as markers for code is an irredeemable faff. Here, I've used a workaround using \x60 as a synonym for the backtick symbol, which displays in Rmarkdown as a backtick, but isn't interpreted as a proper backtick when knitting. Do please excuse and ignore the unintelligible symbols in this section - unless you one day plan to write a similar training demo...-->
 
-+ we have one date per row. So counting the rows of `data_dates` tells us the total number of days. We can do this using the expression `` `r '\x60r nrow(data_dates)\x60'` ``.
-+ the command `sum(data_dates$count1)` adds all the entries in the count1 column
++ we have one date per row. So counting the rows of `tidy_data` tells us the total number of days. We can do this using the expression `` `r '\x60r nrow(tidy_data)\x60'` ``.
++ the command `sum(tidy_data$count1)` adds all the entries in the count1 column
     + **reminder**: using `$` lets us select a column from our tibble
-+ `max(data_dates$count3)` gives us the maximum value in count3
-+ the value of count2 on the first day of the range is given by (`r data_dates %>% filter(date == min(date)) %>% select(count2) %>% as.numeric`)
-    + **reminder**: we use the `%>%` pipe to chain commands together. 
-    + From left to right, we take the `data_dates` tibble
++ `max(tidy_data$count3)` gives us the maximum value in count3
++ the value of count2 on the first day of the range is given by (`r tidy_data |> filter(date == min(date)) |> pull(count2)`)
+    + **reminder**: we use the `|>` pipe to chain commands together. 
+    + From left to right, we take the `tidy_data` tibble
     + then use the `dplyr::filter` command to find the row where the date is equal to the `min(date)`
     + then use `dplyr::select(count2)` to pick out the value of count2 on that date
     + then convert the result from a 1x1 tibble into a number using `as.numeric()`
-+ the mean (average) of count3 was `round(mean(data_dates$count3), 1)`
-    + we use `round()` to give us our average to 1 decimal place. Otherwise R will report is as `r mean(data_dates$count3)`. The extreme precision here is commendable, but misguided!
++ the mean (average) of count3 was `round(mean(tidy_data$count3), 1)`
+    + we use `round()` to give us our average to 1 decimal place. Otherwise R will report is as `r mean(tidy_data$count3)`. The extreme precision here is commendable, but misguided!
     + finally, in the header, we have a little group of commands to report the month and year that our data covers:
-    - `` `r '\x60r month(min(data_dates$date), label = T, abbr=F)\x60'` `` takes the earliest date `min(data_dates$date)`, and then extracts the full month using `month( ..., label = T, abbr = F)`. There are lots of options for displaying the names of months, so I'd encourage you to run `?month()` to find out about them
-    - `` `r '\x60r month(max(data_dates$date), label = T, abbr=F)\x60'` `` does the same, but for the last date in the range
-    - `` `r '\x60r year(min(data_dates$date))\x60'` `` extracts the year in a similar way
+    - `` `r '\x60r month(min(tidy_data$date), label = T, abbr=F)\x60'` `` takes the earliest date `min(tidy_data$date)`, and then extracts the full month using `month( ..., label = T, abbr = F)`. There are lots of options for displaying the names of months, so I'd encourage you to run `?month()` to find out about them
+    - `` `r '\x60r month(max(tidy_data$date), label = T, abbr=F)\x60'` `` does the same, but for the last date in the range
+    - `` `r '\x60r year(min(tidy_data$date))\x60'` `` extracts the year in a similar way
 
 I'll say it again: **change the data, and all this stuff will update automatically**. Change the data, re-knit the report, and bask in the glory of a updated report - go on, try it!
 
 ### Exercise 1
 
-As a refresher, let's have a look at the first few rows of the data tibble using ```head()```, and also print out the total number of rows using ```nrow(data_dates)```:
+As a refresher, let's have a look at the first few rows of the data tibble using ```head()```, and also print out the total number of rows using ```nrow(tidy_data)```:
 
 ```{r text ex 1, echo=TRUE, eval=TRUE,warning = FALSE, message=FALSE}
 
@@ -313,13 +321,13 @@ This time, let's try formatting the output of our R snippets. I've provided a li
 
 <!-- here are the example R snippets for you -->
 
-Sum count3 on Mondays in our range: `r data_dates %>% filter(wday(data_dates$date) == 2) %>% select(count3) %>% sum()`
+Sum count3 on Mondays in our range: `r tidy_data |> filter(wday(tidy_data$date) == 2) |> select(count3) |> sum()`
 
-Number of days where count1 is 30 or more, and count2 is 70 or less: `r data_dates %>% filter(count1 >= 30 & count2 <= 70) %>% nrow()`
+Number of days where count1 is 30 or more, and count2 is 70 or less: `r tidy_data |> filter(count1 >= 30 & count2 <= 70) |> nrow()`
 
-Number of days where count1 is greater than count3: `r data_dates %>% filter(count1 > count3) %>% nrow()` 
+Number of days where count1 is greater than count3: `r tidy_data |> filter(count1 > count3) |> nrow()` 
 
-Count 2 was highest on this day of the week: `r data_dates %>% filter(count2==max(count2)) %>% pull(date) %>% wday(label=T, abbr=F)`
+Count 2 was highest on this day of the week: `r tidy_data |> filter(count2==max(count2)) |> pull(date) |> wday(label=T, abbr=F)`
 
 <!-- write your paragraph below -->
 
@@ -344,55 +352,55 @@ Can you write a simple new command, and include it in a line or two of explanato
 
 ## Data tables
 
-The raw output from tibbles (like when we use `head(data_dates)`) that we've been using so far is very informative, telling us about the types of data we have and so on. But it looks pretty nasty. Ideally, we'd like to be able to format this text so that it fits into our report properly.
+The raw output from tibbles (like when we use `head(tidy_data)`) that we've been using so far is very informative, telling us about the types of data we have and so on. But it looks pretty nasty. Ideally, we'd like to be able to format this text so that it fits into our report properly.
 
 ### Using knitr::kable
 
-Sometimes our reports need to contain larger chunks of data than are comfortable to manage using inline text. The most obvious example is the data table. We have some R commands that are extremely helpful for writing data tables in reports. `kable` is the most useful of all, because it allows us to produce nicely formatted tables with the very minimum of fooling about. When we use `kable` to show the first few rows of the `data_dates` tibble we get the following:
+Sometimes our reports need to contain larger chunks of data than are comfortable to manage using inline text. The most obvious example is the data table. We have some R commands that are extremely helpful for writing data tables in reports. `kable` is the most useful of all, because it allows us to produce nicely formatted tables with the very minimum of fooling about. When we use `kable` to show the first few rows of the `tidy_data` tibble we get the following:
 
 ```{r data table 1, echo=TRUE, eval=TRUE,warning = FALSE, message=FALSE}
-data_dates %>%
-  head() %>%
+tidy_data |>
+  head() |>
   kable()
 ```
 
 It's also possible to tweak lots of aspects of tables with `kable`. We can add a caption using the `caption = "something"` option:
 
 ```{r}
-data_dates %>%
-  head() %>%
+tidy_data |>
+  head() |>
   kable(caption = "A superbly magnificent table of data")
 ```
 
 We can also rename columns in place:
 
 ```{r}
-data_dates %>%
-  head() %>%
+tidy_data |>
+  head() |>
   kable(col.names = c("Date", "Count 1", "Count 2", "Count 3"))
 ```
 
 Make sure that you supply the right number of column titles, otherwise you'll see an exceptionally unfriendly error message:
 
 ```{r}
-try(data_dates %>%
-  head() %>%
+try(tidy_data |>
+  head() |>
   kable(col.names = c("Date", "Count 1", "Count 2")))
 ```
 
 And you can modifying the alignment of the columns:
 
 ```{r}
-data_dates %>%
-  head() %>%
+tidy_data |>
+  head() |>
   kable(align = c("r", "c", "c", "l"))
 ```
 
 You might also usefully look at the manual page (`?kable`) to get a sense of the possible scope for tweaking tables in this way:
 
 ```{r data table 2, echo=TRUE, eval=TRUE,warning = FALSE, message=FALSE}
-data_dates %>%
-  head() %>%
+tidy_data |>
+  head() |>
   kable(
     caption = "A superbly magnificent table of data",
     col.names = c("Date", "Count 1", "Count 2", "Count 3"),
@@ -404,7 +412,7 @@ data_dates %>%
 ### Exercise 1
 Let's try making a new, simple, table from the first few rows of `data2` using `head()` and `kable()` below
 ```{r data ex 1, echo=TRUE, eval=TRUE,warning = FALSE, message=FALSE}
-# just in case you don't have data in your workspace, you can re-create it by uncommenting the following line:
+# just in case you don't have data2 in your workspace, you can re-create it by uncommenting the following line:
 # data2 <- read_excel("data/data2.xlsx")
 
 
