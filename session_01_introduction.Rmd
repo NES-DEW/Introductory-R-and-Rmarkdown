@@ -29,8 +29,7 @@ install.packages(setdiff("pacman", rownames(installed.packages())))
 
 library("pacman")
 
-p_load(tidyr,readr,DiagrammeR,ggplot2,dplyr,lubridate,NHSRplotthedots,readxl,stringr,glue,knitr)
-
+p_load(tidyr,readr,ggplot2,dplyr,lubridate,readxl, knitr)
 # avoiding tidyverse as loading in RStudio Cloud potentially runs out of memory 
 ```
 
