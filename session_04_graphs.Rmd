@@ -34,8 +34,8 @@ p_load(tidyr,readr,DiagrammeR,ggplot2,dplyr,lubridate,NHSRplotthedots,readxl,str
 
 # avoiding tidyverse as loading in RStudio Cloud potentially runs out of memory 
 
-data_total <- read_csv("data/data.csv") %>%
-  mutate(date = dmy(date)) %>%
+data_total <- read_csv("data/data.csv") |>
+  mutate(date = dmy(date)) |>
   mutate(total = count1+count2+count3)
 ```
 
@@ -62,23 +62,23 @@ A reminder of the ground rules for this session:
 Let's start with a minimal example using our `data_total` tibble, plotting an XY scatter plot of count1 against count2:
 
 ```{r}
-data_total %>%
+data_total |>
   ggplot() +
   geom_point(aes(x=count1, y=count2))
 ```
 
 Here, the code works as follows:
 
-- `data_total %>% ggplot()` - `ggplot2()` starts a new plot area, and we associate that new plot area with the `data_total` tibble using the pipe
+- `data_total |> ggplot()` - `ggplot2()` starts a new plot area, and we associate that new plot area with the `data_total` tibble using the pipe
 - `geom_point()` tells ggplot2 that we want an XY scatter drawn on our plot area
 - the crux of the code is the `(aes(x=count1, y=count2))`. Here, `aes` means *set the aesthetics of this graph as follows...*. So it's here that we tell R which columns from the `data_total` tibble we should use to plot the points specified in `geom_point`
-- finally, the `+` then chains together commands to produce a single plot. Unlike the `%>%`, `+` doesn't pass the result of one command to the next. Instead, `+` is just a way of connecting lots of different operations that we want to perform to a single plot area. This is part of the design philosophy of ggplot2, which treats the elements of a graph as [layers that can be built up](https://rpubs.com/hadley/ggplot2-layers) to produce complex and useful visualisations. We'll explore lots of other ggplot2 options later, but first we'll look at how to place your graph into your report.
+- finally, the `+` then chains together commands to produce a single plot. Unlike the `|>`, `+` doesn't pass the result of one command to the next. Instead, `+` is just a way of connecting lots of different operations that we want to perform to a single plot area. This is part of the design philosophy of ggplot2, which treats the elements of a graph as [layers that can be built up](https://rpubs.com/hadley/ggplot2-layers) to produce complex and useful visualisations. We'll explore lots of other ggplot2 options later, but first we'll look at how to place your graph into your report.
 
 One quick trick that will pay immediate dividends: we can save a ggplot object in a variable using `<-`:
 
 ```{r fig.align='left', fig.height=1, fig.width=3}
 
-simple_graph <- data_total %>%
+simple_graph <- data_total |>
   ggplot() +
   geom_point(aes(x=count1, y=count2))
 
@@ -127,11 +127,11 @@ simple_graph +
 So far, we've been working just with `geom_point()`, but there are many other `geom_xxx` options. A couple of commonly-used examples are `geom_col()` and `geom_line()`. Note that neither of these are really going to show anything useful plotting count1 against count2, so we'll use some other parts of our `demo` tibble so that we see the counts plotted against the date:
 
 ```{r}
-data_total %>%
+data_total |>
   ggplot() +
   geom_col(aes(x=date, y=count2))
 
-data_total %>%
+data_total |>
   ggplot() +
   geom_line(aes(x=date, y=count3)) +
   geom_smooth(aes(x=date, y=count3))
@@ -140,7 +140,7 @@ data_total %>%
 The line graph above has a smoothed conditional mean with 95% CI added via `+` and `geom_smooth()`. We can continue to add elements to ggplot using `+` - so below I'll add some labels (`xlab` and `ylab`), a title (`labs(title="...")`), and a smoothed mean line to our first plot via `geom_smooth()`. I'll also change the colour of the dots using `colour="#004380"` in the `geom_point()` call.
 
 ```{r}
-data_total %>%
+data_total |>
   ggplot() +
   geom_point(aes(x=count1, y=count2), colour="#004380") +
   geom_smooth(aes(x=count1, y=count2), method='lm') +
@@ -161,7 +161,7 @@ Let's take the code for the graph above, and rework it. What we've been asked to
 
 ```{r}
 # I've left some fragments of code here to help you get started
-data_total %>%
+data_total |>
   ggplot() +
   geom_point(aes(x=date, y=count1), colour="#004380") +
   labs(title="") +
@@ -174,13 +174,13 @@ That's very pretty! But perhaps not the most useful graph in the world. In the n
 The secret to most useful visualisations is to get the data into the right format. Here's an example, based on using `dplyr` from the tidyverse to select parts of the data (i.e. excluding the total column), and then reformatting the demo tibble data. This should all be familiar from the data processing section, but the difference here is that we're building our data work into our graph drawing. This allows us to ask ggplot2 to plot counts for each day automatically, using the `fill` option to set each type of count as a different colour. This avoids the kind of repetition from the exercise at the end of the last section.
 
 ```{r}
-data_total2 <- data_total %>%
-  dplyr::select(!total) %>%
+data_total2 <- data_total |>
+  dplyr::select(!total) |>
   pivot_longer(!date, names_to = "names", values_to = "count")
 
 head(data_total2)
 
-data_total2 %>%
+data_total2 |>
   ggplot() +
   geom_col(aes(x=date, y=count, fill=names), position="stack") +
   labs(title = "Stacked bar of counts by date", fill="Count type") +
@@ -194,25 +194,25 @@ Most of this code should be very familiar to you by now. We have a couple of lin
 let's look again at the structure of our `data_total`.
 
 ```{r}
-data_total %>%
-  head() %>%
+data_total |>
+  head() |>
   kable()
 ```             
 
 In the data, we have several different observations per date. This makes some of the plotting functions that we might want to do awkward, because we don't have a good way of specifying to ggplot how it should handle data in different columns (like assigning everything in the count1 column a certain colour). `pivot_longer` allows us to work round this problem by re-shaping our data. Let's use it, and have a look at the results:
 
 ```{r}
-data_total %>%
-  pivot_longer(!date, names_to = "names", values_to = "count") %>%
-  head(n=12) %>%
+data_total |>
+  pivot_longer(!date, names_to = "names", values_to = "count") |>
+  head(n=12) |>
   kable()
 ```  
 
 As the name suggests, `pivot_longer` has made our data longer. Instead of four columns of counts + total, we now have only two: one with the name of the count, and the other with the value of that count on that date. This means that we handle data that contains several different kinds of value in a more highly automated way:
 
 ```{r}
-data_total %>% 
-  pivot_longer(!date, names_to = "names", values_to = "count") %>%
+data_total |> 
+  pivot_longer(!date, names_to = "names", values_to = "count") |>
   ggplot() +
   geom_col(aes(x=date, y=count, fill=names), position="stack") +
   facet_wrap(~ names)
@@ -221,9 +221,9 @@ data_total %>%
 Here, the only new bit of `ggplot` that we need is `facet_wrap(~ names)`, which splits our graph up into little subgraphs depending on what we specify after the `~`. We can split up lots of different ways with these small multiples - some more usefully than others - but this can be a really powerful tool for showing patterns in your data:
 
 ```{r}
-data_total %>% 
-  pivot_longer(!date, names_to = "names", values_to = "count") %>%
-  filter(date <= (min(date)+5)) %>%
+data_total |> 
+  pivot_longer(!date, names_to = "names", values_to = "count") |>
+  filter(date <= (min(date)+5)) |>
   ggplot() +
   geom_col(aes(x=names, y=count, fill=names)) +
   facet_wrap(~ date)
@@ -235,9 +235,9 @@ Note that the changes to `demo_total` that we do in this commands are only tempo
 It's worth noting that you can use multiple data sources in one ggplot area. For example, we can take the first section of code above, and add back in a smoothed mean line from the original tibble:
 
 ```{r}
-data_total %>%
-  dplyr::select(!total) %>%
-  pivot_longer(!date, names_to = "names", values_to = "count") %>%
+data_total |>
+  dplyr::select(!total) |>
+  pivot_longer(!date, names_to = "names", values_to = "count") |>
   ggplot() +
   geom_col(aes(x=date, y=count, fill=names)) +
   geom_smooth(data=data_total, aes(x=date, y=total)) +
@@ -252,9 +252,9 @@ In `geom_smooth()` we specify a new data source - the version of `data_total` be
 As well as the whole-graph changes to appearance that we explored earlier when we set graph themes, we can also just tweak the colours appearing in our graph using palettes:
 
 ```{r}
-data_total %>%
-  dplyr::select(!total) %>%
-  pivot_longer(!date, names_to = "names", values_to = "count") %>%
+data_total |>
+  dplyr::select(!total) |>
+  pivot_longer(!date, names_to = "names", values_to = "count") |>
   ggplot() +
   geom_col(aes(x=date, y=count, fill=names)) +
   geom_smooth(data=data_total, aes(x=date, y=total)) +
@@ -270,9 +270,9 @@ Here, we've manually specified three colours using the `scale_fill_manual()` com
 # create a variable NEScol containing hex values for NES colours
 NEScol <- c("#004380", "#0096DC", "#6C2383", "#007188", "#00AFAA", "#80BA27", "#3FA535", "#FFDD00", "#F39200", "#B10933", "#BD006A")
 
-data_total %>%
-  dplyr::select(!total) %>%
-  pivot_longer(!date, names_to = "names", values_to = "count") %>%
+data_total |>
+  dplyr::select(!total) |>
+  pivot_longer(!date, names_to = "names", values_to = "count") |>
   ggplot() +
   geom_col(aes(x=date, y=count, fill=names)) +
   geom_smooth(data=data_total, aes(x=date, y=total)) +
@@ -281,8 +281,8 @@ data_total %>%
   ylab("Count") + 
   scale_fill_manual(values=NEScol)
 
-data_total %>% 
-  pivot_longer(!date, names_to = "names", values_to = "count") %>%
+data_total |> 
+  pivot_longer(!date, names_to = "names", values_to = "count") |>
   ggplot() +
   geom_col(aes(x=date, y=count, fill=names)) +
   facet_wrap(~ names) +
@@ -295,9 +295,9 @@ data_total %>%
 A last word about a useful command: `coord_flip()`, which swaps your axes. Very helpful if you realise that you've got the dependence relationships between your variables backwards. It's just added in as a layer to your ggplot code, as follows:
 
 ```{r}
-data_total %>% 
-  pivot_longer(!date, names_to = "names", values_to = "count") %>%
-  filter(date <= (min(date)+5)) %>%
+data_total |> 
+  pivot_longer(!date, names_to = "names", values_to = "count") |>
+  filter(date <= (min(date)+5)) |>
   ggplot() +
   geom_col(aes(x=names, y=count, fill=names)) +
   facet_wrap(~ date) +
@@ -355,14 +355,6 @@ It might be more convenient to use the mini-chunk structure of `r include_graphi
 include_graphics("img/header.png")
 ```
 
-----
-
-Some graphics formats won't knit properly to all outputs. .gif especially tends to cause trouble with .pdf output. You can escape this - at the price of omitting your image - using the `is_html_output()` command in the chunk header. This checks to see if your output format is .html, and if it then running the code in the chunk. This lets us include animations in the .html report, and leave them out of the static formats like .pdf:
-
-```{r eval=knitr::is_html_output(), echo=F, fig.align='center', fig.cap='Image credit: https://gfycat.com/defiantwateryblackfish-aleksandar-jovanovic-ronnie-osullivan'}
-include_graphics("https://thumbs.gfycat.com/DefiantWateryBlackfish-size_restricted.gif")
-```
-
 ## Next steps {.tabset}
 
 #### Reading and resources
@@ -386,6 +378,6 @@ include_graphics("https://thumbs.gfycat.com/DefiantWateryBlackfish-size_restrict
 
 #### Alternatives to R/Rmarkdown
 
-+ Microsoft's PowerBI. This is more focused on building real-time dashboards, and it's intended to be a low-code way of working that should be a fairly natural step for staff with lots of Excel experience. **We have supporting resources under development for PowerBI, which I'll link here when completed**.
-+ R + Shiny is the best R-based way of building real-time dashboards (and will hopefully be something we will support from the KIND Learning Network in the future)
++ Microsoft's PowerBI. This is more focused on building real-time dashboards, and it's intended to be a low-code way of working that should be a fairly natural step for staff with lots of Excel experience. We have [several training options](https://nes-dew.github.io/KIND-training/BI_main.html) for Power BI.
++ R + Shiny is the best R-based way of building real-time dashboards
 + If you're getting on well with R/Rmarkdown, but would rather build a dashboard than a report, [Flexdashboard](https://pkgs.rstudio.com/flexdashboard/) looks great. To get started, there's an [example](https://www.themillerlab.io/post/flexdashboards/mcc_fake_cohort_dashboard_for_post.html#outcomes-by-stage) and a [walkthrough by the Miller Lab](https://www.themillerlab.io/post/flexdashboards/)
